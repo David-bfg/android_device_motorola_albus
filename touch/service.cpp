@@ -20,6 +20,7 @@
 #include <hidl/HidlTransportSupport.h>
 
 #include "KeyDisabler.h"
+#include "KeySwapper.h"
 
 using android::OK;
 using android::sp;
@@ -29,10 +30,14 @@ using android::hardware::joinRpcThreadpool;
 
 using ::vendor::lineage::touch::V1_0::IKeyDisabler;
 using ::vendor::lineage::touch::V1_0::implementation::KeyDisabler;
+using ::vendor::lineage::touch::V1_0::IKeySwapper;
+using ::vendor::lineage::touch::V1_0::implementation::KeySwapper;
 
 int main() {
     sp<KeyDisabler> keyDisabler;
-    status_t status;
+    status_t statusDisabler;
+    sp<KeySwapper> KeySwapper;
+    status_t statusSwapper;
 
     LOG(INFO) << "Touch HAL service is starting.";
 
@@ -42,12 +47,25 @@ int main() {
         goto shutdown;
     }
 
+    KeySwapper = new KeySwapper();
+    if (KeySwapper == nullptr) {
+        LOG(ERROR) << "Can not create an instance of Touch HAL KeySwapper Iface, exiting.";
+        goto shutdown;
+    }
+
     configureRpcThreadpool(1, true /*callerWillJoin*/);
 
-    status = keyDisabler->registerAsService();
-    if (status != OK) {
+    statusDisabler = keyDisabler->registerAsService();
+    if (statusDisabler != OK) {
         LOG(ERROR) << "Could not register service for Touch HAL KeyDisabler Iface ("
-                   << status << ")";
+                   << statusDisabler << ")";
+        goto shutdown;
+    }
+
+    statusSwapper = KeySwapper->registerAsService();
+    if (statusSwapper != OK) {
+        LOG(ERROR) << "Could not register service for Touch HAL KeySwapper Iface ("
+                   << statusSwapper << ")";
         goto shutdown;
     }
 
