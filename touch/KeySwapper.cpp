@@ -20,6 +20,10 @@
 
 #include "KeySwapper.h"
 
+namespace {
+constexpr const char kControlPath[] = "/proc/s1302/key_rep";
+};  // anonymous namespace
+
 namespace vendor {
 namespace lineage {
 namespace touch {
@@ -31,22 +35,30 @@ KeySwapper::KeySwapper() {
 
     mFingerprintNavigation = IFingerprintNavigation::getService();
     if (mFingerprintNavigation != nullptr)
-        mHasKeySwapper = true;
+        mHasKeySwapper = !access(kControlPath, R_OK | W_OK);
 }
 
 // Methods from ::vendor::lineage::touch::V1_0::KeySwapper follow.
 Return<bool> KeySwapper::isEnabled() {
     if (!mHasKeySwapper) return false;
 
-    return mFingerprintNavigation->isEnabled();
+    std::string buf;
+    if (!android::base::ReadFileToString(kControlPath, &buf)) {
+        LOG(ERROR) << "Failed to read " << kControlPath;
+        return false;
+    }
+
+    return std::stoi(android::base::Trim(buf)) == 1;
 }
 
 Return<bool> KeySwapper::setEnabled(bool enabled) {
     if (!mHasKeySwapper) return false;
 
-    // TODO: it appears this is only an interface and requires
-    // a KeySwapper implementation to actually work.
-    // mFingerprintNavigation->setNavigation(!enabled);
+    if (!android::base::WriteStringToFile(std::to_string(enabled), kControlPath)) {
+        LOG(ERROR) << "Failed to write " << kControlPath;
+        return false;
+    }
+
     return true;
 }
 

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef VENDOR_LINEAGE_TOUCH_V1_0_KEYDISABLER_H
-#define VENDOR_LINEAGE_TOUCH_V1_0_KEYDISABLER_H
+#ifndef VENDOR_LINEAGE_TOUCH_V1_0_KEYSWAPPER_H
+#define VENDOR_LINEAGE_TOUCH_V1_0_KEYSWAPPER_H
 
 #include <com/fingerprints/extension/1.0/IFingerprintNavigation.h>
 #include <vendor/lineage/touch/1.0/IKeySwapper.h>
@@ -34,12 +34,12 @@ class KeySwapper : public IKeySwapper {
   public:
     KeySwapper();
 
-    // Methods from ::vendor::lineage::touch::V1_0::IKeyDisabler follow.
+    // Methods from ::vendor::lineage::touch::V1_0::IKeySwapper follow.
     Return<bool> isEnabled() override;
     Return<bool> setEnabled(bool enabled) override;
 
   private:
-    bool mHasKeyDisabler;
+    bool mHasKeySwapper;
     sp<IFingerprintNavigation> mFingerprintNavigation;
 };
 
@@ -49,4 +49,4 @@ class KeySwapper : public IKeySwapper {
 }  // namespace lineage
 }  // namespace vendor
 
-#endif  // VENDOR_LINEAGE_TOUCH_V1_0_KEYDISABLER_H
+#endif  // VENDOR_LINEAGE_TOUCH_V1_0_KEYSWAPPER_H
