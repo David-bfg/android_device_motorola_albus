@@ -17,8 +17,16 @@
 #include <android-base/file.h>
 #include <android-base/logging.h>
 #include <android-base/strings.h>
+#include <iostream>
+#include <fstream>
+#include <regex>
+#include <vector>
 
 #include "KeySwapper.h"
+
+namespace {
+constexpr const char kControlPath[] = "/system/vendor/usr/keylayout/uinput-fpc.kl";
+};  // anonymous namespace
 
 namespace vendor {
 namespace lineage {
@@ -38,19 +46,50 @@ KeySwapper::KeySwapper() {
 Return<bool> KeySwapper::isEnabled() {
     if (!mHasKeySwapper) return false;
 
-    std::string buf;
-    mFingerprintNavigation->getNavigationConfig(&buf);// defined as passing std::__1::function<void (com::fingerprints::extension::V1_0::NavigationConfig const&)>
-                                                        // also refered to elsewhere as std::__1::function<void (android::hardware::Parcel&)>
+    std::ifstream input_file(kControlPath);
+    std::string line;
+    const std::regex default_pattern_app_switch(R"(key\s+620\s+APP_SWITCH\s+VIRTUAL)");
+    const std::regex default_pattern_back(R"(key\s+621\s+BACK\s+VIRTUAL)");
 
-    return std::stoi(android::base::Trim(buf)) == 1;
+    // Read the lines from the input file into a vector
+    while (std::getline(input_file, line)) {
+        if (std::regex_search(line, default_pattern_app_switch) || 
+                std::regex_search(line, default_pattern_back)) {
+            input_file.close();
+            return false;
+        }
+    }
+    input_file.close();
+
+    return true;
 }
 
 Return<bool> KeySwapper::setEnabled(bool enabled) {
     if (!mHasKeySwapper) return false;
 
-    std::string buf;
-    mFingerprintNavigation->setNavigationConfig(&buf);// defined as passing com::fingerprints::extension::V1_0::NavigationConfig const&
-                                                        // also refered to elsewhere as std::__1::function<void (android::hardware::Parcel&)>
+    std::ifstream input_file(kControlPath);
+    std::vector<std::string> lines;
+    std::string line;
+    const std::regex pattern(R"(key\s+62[01])");
+
+    // Read the lines from the input file into a vector
+    while (std::getline(input_file, line)) {
+        if (!std::regex_search(line, pattern)) {
+            lines.push_back(line);
+        }
+    }
+    input_file.close();
+
+    // write keys swapping positions
+    lines.push_back(std::string("key ") + (enabled ? "621" : "620") + "   APP_SWITCH   VIRTUAL");
+    lines.push_back(std::string("key ") + (enabled ? "620" : "621") + "   BACK         VIRTUAL");
+    
+    // Write the updated lines to the input file
+    std::ofstream output_file(kControlPath);
+    for (const auto& line : lines) {
+        output_file << line << std::endl;
+    }
+    output_file.close();
 
     return true;
 }
