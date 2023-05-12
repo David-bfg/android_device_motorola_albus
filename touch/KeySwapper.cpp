@@ -20,10 +20,6 @@
 
 #include "KeySwapper.h"
 
-namespace {
-constexpr const char kControlPath[] = "/proc/s1302/key_rep";
-};  // anonymous namespace
-
 namespace vendor {
 namespace lineage {
 namespace touch {
@@ -43,10 +39,8 @@ Return<bool> KeySwapper::isEnabled() {
     if (!mHasKeySwapper) return false;
 
     std::string buf;
-    if (!android::base::ReadFileToString(kControlPath, &buf)) {
-        LOG(ERROR) << "Failed to read " << kControlPath;
-        return false;
-    }
+    mFingerprintNavigation->getNavigationConfig(&buf);// defined as passing std::__1::function<void (com::fingerprints::extension::V1_0::NavigationConfig const&)>
+                                                        // also refered to elsewhere as std::__1::function<void (android::hardware::Parcel&)>
 
     return std::stoi(android::base::Trim(buf)) == 1;
 }
@@ -54,10 +48,9 @@ Return<bool> KeySwapper::isEnabled() {
 Return<bool> KeySwapper::setEnabled(bool enabled) {
     if (!mHasKeySwapper) return false;
 
-    if (!android::base::WriteStringToFile(std::to_string(enabled), kControlPath)) {
-        LOG(ERROR) << "Failed to write " << kControlPath;
-        return false;
-    }
+    std::string buf;
+    mFingerprintNavigation->setNavigationConfig(&buf);// defined as passing com::fingerprints::extension::V1_0::NavigationConfig const&
+                                                        // also refered to elsewhere as std::__1::function<void (android::hardware::Parcel&)>
 
     return true;
 }
